@@ -396,7 +396,7 @@ lcore_main()
             }
         }
 
-        port_id = (port_id+1) % flow_num;
+        // port_id = (port_id+1) % flow_num;
     }
     printf("Sent %"PRIu64" packets.\n", reqs);
     // dump_latencies(&latency_dist);
