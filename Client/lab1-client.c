@@ -101,12 +101,12 @@ static int parse_packet(struct sockaddr_in *src,
     struct rte_ether_addr mac_addr = {};
 
     rte_eth_macaddr_get(1, &mac_addr);
-    if (!rte_is_same_ether_addr(&mac_addr, &eth_hdr->d_addr) && !rte_is_same_ether_addr(&ether_broadcast, &eth_hdr->d_addr)) {
+    if (!rte_is_same_ether_addr(&mac_addr, &eth_hdr->dst_addr)) {
         printf("Bad MAC: %02" PRIx8 " %02" PRIx8 " %02" PRIx8
 			   " %02" PRIx8 " %02" PRIx8 " %02" PRIx8 "\n",
             eth_hdr->dst_addr.addr_bytes[0], eth_hdr->dst_addr.addr_bytes[1],
-			eth_hdr->dst_addr.addr_bytes[2], eth_hdr->d_addr.addr_bytes[3],
-			eth_hdr->d_addr.addr_bytes[4], eth_hdr->d_addr.addr_bytes[5]);
+			eth_hdr->dst_addr.addr_bytes[2], eth_hdr->dst_addr.addr_bytes[3],
+			eth_hdr->dst_addr.addr_bytes[4], eth_hdr->dst_addr.addr_bytes[5]);
         return 1;
     }
     if (RTE_ETHER_TYPE_IPV4 != eth_type) {
@@ -131,7 +131,6 @@ static int parse_packet(struct sockaddr_in *src,
     src->sin_addr.s_addr = ipv4_src_addr;
     dst->sin_addr.s_addr = ipv4_dst_addr;
     
-
     // check udp header
     struct rte_udp_hdr * const udp_hdr = (struct rte_udp_hdr *)(p);
     p += sizeof(*udp_hdr);
@@ -147,7 +146,6 @@ static int parse_packet(struct sockaddr_in *src,
 	uint16_t p2 = rte_cpu_to_be_16(5002);
 	uint16_t p3 = rte_cpu_to_be_16(5003);
 	uint16_t p4 = rte_cpu_to_be_16(5004);
-	printf("dst port %d, %d\n", udp_hdr->dst_port, p2);
 	
 	if (udp_hdr->dst_port ==  p1)
 	{
@@ -340,7 +338,7 @@ lcore_main()
         uint16_t dstp = 5001 + port_id;
         udp_hdr->src_port = rte_cpu_to_be_16(srcp);
         udp_hdr->dst_port = rte_cpu_to_be_16(dstp);
-        udp_hdr->dgram_len = rte_cpu_to_be_16(sizeof(struct rte_udp_hdr) + sizeof(struct sliding_hdr) + packet_len);
+        udp_hdr->dgram_len = rte_cpu_to_be_16(sizeof(struct rte_udp_hdr) + packet_len);
 
         uint16_t udp_cksum =  rte_ipv4_udptcp_cksum(ipv4_hdr, (void *)udp_hdr);
 
@@ -351,10 +349,6 @@ lcore_main()
 
         /* set the payload */
         memset(ptr, 'a', packet_len);
-        /* record timestamp in the payload itself*/
-        uint64_t send_time = time_now(clock_offset);
-        uint64_t *timestamp_ptr = (uint64_t *)(ptr);
-        *timestamp_ptr = send_time;
 
         pkt->l2_len = RTE_ETHER_HDR_LEN;
         pkt->l3_len = sizeof(struct rte_ipv4_hdr);
@@ -436,7 +430,8 @@ int main(int argc, char *argv[])
 
 	argc -= ret;
 	argv += ret;
-\
+
+    nb_ports = rte_eth_dev_count_avail();
 	/* Allocates mempool to hold the mbufs. 8< */
 	mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", NUM_MBUFS * nb_ports,
 										MBUF_CACHE_SIZE, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());

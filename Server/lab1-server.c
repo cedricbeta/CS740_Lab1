@@ -20,6 +20,7 @@
 #define MBUF_CACHE_SIZE 250
 #define BURST_SIZE 32
 #define PORT_NUM 4
+
 struct rte_mempool *mbuf_pool = NULL;
 static struct rte_ether_addr my_eth;
 size_t window_len = 10;
@@ -249,6 +250,7 @@ lcore_main(void)
 {
 	uint16_t port;
 	uint32_t rec = 0;
+	uint16_t nb_rx;
 
 	/*
 	 * Check that the port is on the same NUMA node as the polling thread
@@ -292,6 +294,8 @@ lcore_main(void)
 			struct rte_ipv4_hdr *ip_h_ack;
 			struct rte_udp_hdr *udp_h_ack;
 
+			const uint16_t nb_rx = rte_eth_rx_burst(port, 0, bufs, BURST_SIZE);
+
 			if (unlikely(nb_rx == 0))
 				continue;
 
@@ -320,7 +324,7 @@ lcore_main(void)
 											   sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) );
 				// rte_pktmbuf_dump(stdout, pkt, pkt->pkt_len);
 				rec++;
-\
+
 
 				// Construct and send Acks
 				ack = rte_pktmbuf_alloc(mbuf_pool);
@@ -412,7 +416,7 @@ lcore_main(void)
 int main(int argc, char *argv[])
 {
 	// struct rte_mempool *mbuf_pool;
-	unsigned nb_ports;
+	unsigned nb_ports = 1;
 	uint16_t portid;
 	
 	/* Initializion the Environment Abstraction Layer (EAL). 8< */
@@ -425,6 +429,7 @@ int main(int argc, char *argv[])
 	argc -= ret;
 	argv += ret;
 
+	nb_ports = rte_eth_dev_count_avail();
 	/* Allocates mempool to hold the mbufs. 8< */
 	mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", NUM_MBUFS * nb_ports,
 										MBUF_CACHE_SIZE, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
