@@ -278,6 +278,7 @@ lcore_main()
     struct rte_ipv4_hdr *ipv4_hdr;
     struct rte_udp_hdr *udp_hdr;
 
+    // Specify the dst mac address here: 
     struct rte_ether_addr dst = {{0x14,0x58,0xD0,0x58,0x5F,0x33}};
 
 	struct sliding_hdr *sld_h_ack;
