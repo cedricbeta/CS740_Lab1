@@ -36,7 +36,7 @@ size_t window_len = 10;
 
 int flow_size = 10000;
 int packet_len = 1000;
-int flow_num = 4;
+int flow_num = 1;
 
 
 static uint64_t raw_time(void) {
